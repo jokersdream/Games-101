@@ -137,11 +137,11 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     //z_interpolated *= w_reciprocal;
 
     // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
-    for (int i = left; i <= right; ++i)
+    if (MSAA)
     {
-        for (int j = bottom; j <= top; ++j) 
+        for (int i = left; i <= right; ++i)
         {
-            if (MSAA)
+            for (int j = bottom; j <= top; ++j) 
             {
                 float x1 = i + 0.25f, y1 = j + 0.25f;
                 float x2 = i + 0.75f, y2 = j + 0.25f;
@@ -167,7 +167,13 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                     }
                 }
             }
-            else
+        }
+    }
+    else
+    {
+        for (int i = left; i <= right; ++i)
+        {
+            for (int j = bottom; j <= top; ++j) 
             {
                 float x = i + 0.5f, y = j + 0.5f;
                 if (insideTriangle(x, y, t.v))
@@ -186,8 +192,6 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
             }
         }
     }
-    
-
 }
 
 void rst::rasterizer::set_model(const Eigen::Matrix4f& m)
