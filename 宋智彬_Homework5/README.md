@@ -16,7 +16,7 @@
 
 > 完成。
 >
-> ![result](./images/binary.ppm)
+> ![result](./images/binary.png)
 
 ## Code
 
