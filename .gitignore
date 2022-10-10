@@ -1,5 +1,5 @@
 # 不上传以下内容
-.DS_Store
-.cmake/
-.vscode/
-build/
+**/.DS_Store
+**/.cmake
+**/.vscode
+**/build
