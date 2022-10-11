@@ -32,7 +32,7 @@ BVHBuildNode* BVHAccel::recursiveBuild(std::vector<Object*> objects)
     // Compute bounds of all primitives in BVH node
     Bounds3 bounds;
     for (int i = 0; i < objects.size(); ++i)
-        bounds = Union(bounds, objects[i]->getBounds());
+        bounds = Union(bounds, objects[i]->getBounds());                    // !!! :此处看代码，应为node.bounds = ... ；此处有疑虑！
     if (objects.size() == 1) {
         // Create leaf _BVHBuildNode_
         node->bounds = objects[0]->getBounds();
@@ -105,5 +105,15 @@ Intersection BVHAccel::Intersect(const Ray& ray) const
 Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
 {
     // TODO Traverse the BVH to find intersection
+    std::array<int, 3> dirIsNeg({ray.direction.x < 0, ray.direction.y < 0, ray.direction.z < 0});
 
+    if (!node->bounds.IntersectP(ray, ray.direction_inv, dirIsNeg))
+        return Intersection();
+    
+    if (!node->left && !node->right)
+        return node->object->getIntersection(ray);  // 见BVH构建代码知，node->object只存放了一个object；若存放多个，需要遍历求交；
+    
+    Intersection l = getIntersection(node->left, ray);
+    Intersection r = getIntersection(node->right, ray);
+    return l.distance < r.distance ? l : r;
 }

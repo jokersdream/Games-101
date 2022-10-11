@@ -65,8 +65,7 @@ public:
                               Vector3f& N, Vector2f& st) const override
     {
         N = normal;
-        //        throw std::runtime_error("triangle::getSurfaceProperties not
-        //        implemented.");
+        //        throw std::runtime_error("triangle::getSurfaceProperties not implemented.");
     }
     Vector3f evalDiffuseColor(const Vector2f&) const override;
     Bounds3 getBounds() override;
@@ -215,26 +214,32 @@ inline Intersection Triangle::getIntersection(Ray ray)
     if (dotProduct(ray.direction, normal) > 0)
         return inter;
     double u, v, t_tmp = 0;
-    Vector3f pvec = crossProduct(ray.direction, e2);
-    double det = dotProduct(e1, pvec);
-    if (fabs(det) < EPSILON)
+    Vector3f pvec = crossProduct(ray.direction, e2);    // S1 = crossProduct(D, E2) : pvec
+    double det = dotProduct(e1, pvec);  // dotProduct(S1, E1) : det
+    if (fabs(det) < EPSILON)            // 分母特别小，意味着1/det无限大，最后t无限大，即距离无限远，相当于看不见
         return inter;
 
-    double det_inv = 1. / det;
-    Vector3f tvec = ray.origin - v0;
-    u = dotProduct(tvec, pvec) * det_inv;
+    double det_inv = 1. / det;          // 1 / dotProduct(S1, E1) : det_inv
+    Vector3f tvec = ray.origin - v0;    // S = O - P0 : tvec
+    u = dotProduct(tvec, pvec) * det_inv;   // dotProduct(S1, S) / dotProduct(S1, E1) -> b1 : u
     if (u < 0 || u > 1)
         return inter;
-    Vector3f qvec = crossProduct(tvec, e1);
-    v = dotProduct(ray.direction, qvec) * det_inv;
+    Vector3f qvec = crossProduct(tvec, e1); // S2 = crossProduct(S, E1) : qvec
+    v = dotProduct(ray.direction, qvec) * det_inv;  // dotProduct(S2, D) / dotProduct(S1, E1) -> b2 : v
     if (v < 0 || u + v > 1)
         return inter;
-    t_tmp = dotProduct(e2, qvec) * det_inv;
+    t_tmp = dotProduct(e2, qvec) * det_inv; // dotProduct(S2, E2) / dotProduct(S1, E1) -> t : t_tmp
 
     // TODO find ray triangle intersection
+    if (t_tmp < 0)
+        return inter;
 
-
-
+    inter.happened = true;
+    inter.distance = t_tmp;
+    inter.coords = ray(t_tmp);
+    inter.normal = normal;
+    inter.obj = this;
+    inter.m = m;
 
     return inter;
 }
