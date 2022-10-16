@@ -23,7 +23,7 @@ I've finished task ...
 
 * binary_ssp16.png
 
-![binary_ssp16.png](assets/binary_ssp16.png)
+![binary_ssp16.png](./images/binary_ssp16.png)
 
 * binary_ssp64.png
 
