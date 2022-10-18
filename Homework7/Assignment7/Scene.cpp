@@ -66,8 +66,8 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     if (!inter_i.happened) // 光线与场景没有交点，返回背景色
         return {};
     
-    if (inter_i.obj->hasEmit()) // 交点是光源，返回光源的颜色
-        return inter_i.m->getEmission();
+    if (inter_i.obj->hasEmit()) // 交点是光源：1.直接光，返回光源的颜色；2.间接光，返回{0}（黑色）
+        return depth == 0 ? inter_i.m->getEmission() : Vector3f(0);
 
     // 交点是物体，颜色来自于 光源的直接照射 和 物体的反射/折射
     Vector3f L_dir(0), L_indir(0);
