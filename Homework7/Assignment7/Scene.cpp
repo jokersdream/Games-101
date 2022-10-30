@@ -4,6 +4,7 @@
 
 #include "Scene.hpp"
 
+#define max(a, b)   (((a) > (b)) ? (a) : (b))
 
 void Scene::buildBVH() {
     printf(" - Generating BVH...\n\n");
@@ -87,6 +88,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         auto cos_theta = dotProduct(w_s, inter_i.normal);
         auto cos_theta_prime = dotProduct(-w_s, interLight.normal);
         auto distance2 = dotProduct(interLight.coords - inter_i.coords, interLight.coords - inter_i.coords);
+        //pdf_light = max(pdf_light, EPSILON);
 
         L_dir = L_i * f_r * cos_theta * cos_theta_prime / distance2 / pdf_light;
     }
@@ -102,6 +104,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         auto f_r = inter_i.m->eval(-ray.direction, w_o, inter_i.normal);
         auto cos_theta = dotProduct(w_o, inter_i.normal);
         auto pdf_hemi = inter_i.m->pdf(-ray.direction, w_o, inter_i.normal);
+        pdf_hemi = max(pdf_hemi, EPSILON);
 
         L_indir = castRay(r_o, depth + 1) * f_r * cos_theta / pdf_hemi / RussianRoulette;
     }

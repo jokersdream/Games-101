@@ -12,7 +12,7 @@ std::mutex mtx;
 
 inline float deg2rad(const float& deg) { return deg * M_PI / 180.0; }
 
-const float EPSILON = 0.001;  //origin is 0.00001, set 0.001
+const float EPSILON = 0.00016;  //origin is 0.00001, set 0.00001
 
 // The main render function. This where we iterate over all pixels in the image,
 // generate primary rays and cast these rays into the scene. The content of the
@@ -46,10 +46,9 @@ void Renderer::Render(const Scene& scene)
         }
         UpdateProgress(j / (float)scene.height);
     }
-    UpdateProgress(1.f);  
 */
-    // 使用多线程模型进行替换
-    int num_threads = 256;
+/* 使用多线程模型进行替换
+    int num_threads = 64;
     std::thread th[num_threads];
     int thread_height = scene.height/num_threads;
     auto renderRows = [&](uint32_t start_height, uint32_t end_height) {
@@ -77,6 +76,31 @@ void Renderer::Render(const Scene& scene)
     for (int t = 0; t < num_threads; ++t)  {
         th[t].join();
     }
+*/
+    //多线程模型-2
+    std::thread th[spp];
+    auto renderOnce = [&]() {
+        for (uint32_t j = 0; j < scene.height; ++j) {
+            for (uint32_t i = 0; i < scene.width; ++i) {
+                // generate primary ray direction
+                float x = (2 * (i + 0.5) / (float)scene.width - 1) *
+                        imageAspectRatio * scale;
+                float y = (1 - 2 * (j + 0.5) / (float)scene.height) * scale;
+
+                Vector3f dir = normalize(Vector3f(-x, y, 1));
+                framebuffer[j * scene.width + i] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
+            }
+            mtx.lock();
+            m++;
+            UpdateProgress(m / float(spp * scene.height));
+            mtx.unlock();
+        }
+    };
+    for (int t = 0; t < spp; ++t)
+        th[t] = std::thread(renderOnce);
+    for (int t = 0; t < spp; ++t)
+        th[t].join();
+    
     UpdateProgress(1.f);
 
     // save framebuffer to file
