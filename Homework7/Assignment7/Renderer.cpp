@@ -9,11 +9,10 @@
 #include "Renderer.hpp"
 
 std::mutex mtx;
-int progress = 0;
 
 inline float deg2rad(const float& deg) { return deg * M_PI / 180.0; }
 
-const float EPSILON = 0.001;  //origin is 0.00001
+const float EPSILON = 0.001;  //origin is 0.00001, set 0.001
 
 // The main render function. This where we iterate over all pixels in the image,
 // generate primary rays and cast these rays into the scene. The content of the
@@ -31,7 +30,7 @@ void Renderer::Render(const Scene& scene)
     int spp = 1024;   // origin is 16
     std::cout << "SPP: " << spp << "\n";
 
-/*
+/* 原始path tracing模型
     for (uint32_t j = 0; j < scene.height; ++j) {
         for (uint32_t i = 0; i < scene.width; ++i) {
             // generate primary ray direction
@@ -47,38 +46,35 @@ void Renderer::Render(const Scene& scene)
         }
         UpdateProgress(j / (float)scene.height);
     }
-    UpdateProgress(1.f);
-*/  // 使用多线程模型进行替换
-    int num_threads = 32;
+    UpdateProgress(1.f);  
+*/
+    // 使用多线程模型进行替换
+    int num_threads = 256;
     std::thread th[num_threads];
     int thread_height = scene.height/num_threads;
     auto renderRows = [&](uint32_t start_height, uint32_t end_height) {
-        for (uint32_t j = start_height; j < end_height; ++j) 
-        {
-            for (uint32_t i = 0; i < scene.width; ++i) 
-            {
+        for (uint32_t j = start_height; j < end_height; ++j) {
+            for (uint32_t i = 0; i < scene.width; ++i) {
                 // generate primary ray direction
                 float x = (2 * (i + 0.5) / (float)scene.width - 1) *
                         imageAspectRatio * scale;
                 float y = (1 - 2 * (j + 0.5) / (float)scene.height) * scale;
 
                 Vector3f dir = normalize(Vector3f(-x, y, 1));
-                for (int k = 0; k < spp; k++){
+                for (int k = 0; k < spp; k++) {
                     framebuffer[(int)(j*scene.width+i)] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
                 }
             }
             mtx.lock();
-            progress++;
-            UpdateProgress(progress / (float)scene.height);
+            m++;
+            UpdateProgress(m / (float)scene.height);
             mtx.unlock();
         }
     };
-    for (int t = 0; t < num_threads; ++t)
-    {
+    for (int t = 0; t < num_threads; ++t) {
         th[t] = std::thread(renderRows, t*thread_height, (t+1)*thread_height);
     }
-    for (int t = 0; t < num_threads; ++t) 
-    {
+    for (int t = 0; t < num_threads; ++t)  {
         th[t].join();
     }
     UpdateProgress(1.f);
